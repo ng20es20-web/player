@@ -1,224 +1,119 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مشغل القنوات</title>
-<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/752/752646.png">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@500&display=swap');
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: 'Cairo', sans-serif;
-    background-color: #000;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
-  header {
-    background: #111;
-    padding: 10px;
-    text-align: center;
-    font-size: 18px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-  }
-  main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-  #playlist {
-    width: 35%;
-    max-width: 300px;
-    background: #0d0d0d;
-    overflow-y: auto;
-    padding: 10px;
-    border-right: 1px solid #222;
-  }
-  #playlist div {
-    padding: 10px;
-    margin-bottom: 6px;
-    background: #1a1a1a;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-  #playlist div:hover {
-    background: #333;
-  }
-  #playlist div.active {
-    background: #2196f3;
-  }
-  #playerContainer {
-    flex: 1;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  video {
-    width: 100%;
-    height: 100%;
-    background: #000;
-  }
-  .loading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.2em;
-  }
-  .controls {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    display: flex;
-    gap: 8px;
-  }
-  .btn {
-    background: rgba(255,255,255,0.15);
-    border: none;
-    color: white;
-    padding: 8px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.85em;
-    transition: 0.2s;
-  }
-  .btn:hover { background: rgba(255,255,255,0.3); }
-  footer {
-    background: #111;
-    text-align: center;
-    padding: 8px;
-    font-size: 0.85em;
-    opacity: 0.7;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مشغل القنوات</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: "Cairo", sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background: rgba(20, 20, 20, 0.9);
+      padding: 10px 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    header h1 {
+      font-size: 18px;
+      margin: 0;
+      flex: 1;
+      text-align: center;
+      color: #00bcd4;
+    }
+
+    .back-btn {
+      color: #fff;
+      text-decoration: none;
+      font-size: 20px;
+      margin-right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      background: black;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      transition: opacity 0.3s;
+    }
+
+    .controls button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .controls button:hover {
+      color: #00bcd4;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <button class="back-btn" onclick="goBack()">←</button>
+    <h1 id="channelName">جاري التحميل...</h1>
+  </header>
 
-<header>📺 مشغل القنوات المباشرة</header>
-<main>
-  <div id="playlist">جارٍ تحميل القنوات...</div>
-  <div id="playerContainer">
-    <div class="loading" id="loading">🎥 جاري التحميل...</div>
-    <video id="player" controls autoplay playsinline></video>
-    <div class="controls">
-      <button class="btn" id="backBtn">⬅ رجوع</button>
-      <button class="btn" id="fullscreenBtn">⛶ ملء الشاشة</button>
-    </div>
+  <video id="player" controls autoplay playsinline></video>
+
+  <div class="controls">
+    <button onclick="togglePlay()">⏯️</button>
+    <button onclick="toggleFullScreen()">⛶</button>
   </div>
-</main>
-<footer>تم التصميم بواسطة Essam ⚽</footer>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script>
-const video = document.getElementById('player');
-const loading = document.getElementById('loading');
-const playlistEl = document.getElementById('playlist');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-const backBtn = document.getElementById('backBtn');
-let hls;
-let channels = [];
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoUrl = urlParams.get('url');
+    const channelName = urlParams.get('name') || 'قناة غير معروفة';
 
-// قراءة الرابط من البارامترات
-const params = new URLSearchParams(window.location.search);
-const m3uUrl = params.get('m3u');
-const videoUrl = params.get('url');
+    document.getElementById('channelName').textContent = channelName;
+    const player = document.getElementById('player');
+    player.src = videoUrl;
 
-// تحميل ملف M3U
-async function loadM3U(url) {
-  try {
-    const res = await fetch(url);
-    const text = await res.text();
-    parseM3U(text);
-  } catch (err) {
-    playlistEl.innerHTML = "❌ فشل تحميل قائمة القنوات.";
-  }
-}
-
-// تحليل ملف M3U واستخراج القنوات
-function parseM3U(text) {
-  const lines = text.split('\n');
-  let name = '';
-  for (let line of lines) {
-    if (line.startsWith('#EXTINF')) {
-      name = line.split(',')[1] || 'قناة غير معروفة';
-    } else if (line.startsWith('http')) {
-      channels.push({ name, url: line.trim() });
+    function goBack() {
+      window.history.back();
     }
-  }
-  displayChannels();
-}
 
-// عرض القنوات في القائمة
-function displayChannels() {
-  playlistEl.innerHTML = '';
-  channels.forEach((ch, index) => {
-    const div = document.createElement('div');
-    div.textContent = ch.name;
-    div.addEventListener('click', () => {
-      document.querySelectorAll('#playlist div').forEach(e => e.classList.remove('active'));
-      div.classList.add('active');
-      playStream(ch.url);
-    });
-    if (index === 0) div.classList.add('active');
-    playlistEl.appendChild(div);
-  });
-  if (channels.length > 0) playStream(channels[0].url);
-}
-
-// تشغيل القناة
-function playStream(url) {
-  loading.style.display = 'block';
-  if (hls) hls.destroy();
-  if (url.endsWith('.m3u8')) {
-    if (Hls.isSupported()) {
-      hls = new Hls();
-      hls.loadSource(url);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play();
-        loading.style.display = 'none';
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = url;
-      video.addEventListener('loadedmetadata', () => {
-        video.play();
-        loading.style.display = 'none';
-      });
-    } else {
-      loading.innerHTML = "⚠️ متصفحك لا يدعم هذا النوع.";
+    function togglePlay() {
+      if (player.paused) player.play();
+      else player.pause();
     }
-  } else {
-    video.src = url;
-    video.addEventListener('loadeddata', () => {
-      loading.style.display = 'none';
-    });
-  }
-}
 
-// زر ملء الشاشة
-fullscreenBtn.addEventListener('click', () => {
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
-  } else {
-    document.getElementById('playerContainer').requestFullscreen();
-  }
-});
-
-// زر الرجوع
-backBtn.addEventListener('click', () => {
-  window.history.back();
-});
-
-// اختيار مصدر التشغيل
-if (m3uUrl) loadM3U(m3uUrl);
-else if (videoUrl) playStream(videoUrl);
-else playlistEl.innerHTML = "❌ لم يتم تمرير رابط M3U أو قناة.";
-</script>
-
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        player.requestFullscreen().catch(err => alert(err));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+  </script>
 </body>
 </html>
